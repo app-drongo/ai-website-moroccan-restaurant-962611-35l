@@ -1,19 +1,55 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Menu, X, Search, Clock, Star } from 'lucide-react';
+import Image from 'next/image';
 import { useSmartNavigation } from '@/hooks/useSmartNavigation';
 
 const DEFAULT_NAVIGATION = {
-  brandName: 'Riad Marrakech',
-  brandTagline: 'Authentic Moroccan Cuisine',
-  menuItems: [{ label: 'Home', href: '#hero' }],
-  reservationText: 'Reserve Table',
-  reservationHref: '#reservations',
-  phoneNumber: '+1 (555) 123-4567',
-  phoneText: 'Call Now',
+  logo: 'Riad Al-Maghrib',
+  links: [
+    { name: 'Home', href: '#hero' },
+    { name: 'Menu', href: '#menu' },
+    { name: 'Reservations', href: '/reservations' },
+    { name: 'Contact', href: '/contact' },
+  ],
+  menuItems: [
+    {
+      id: '1',
+      name: 'Tagine Royale',
+      description: 'Traditional Moroccan stew with tender lamb, apricots, and aromatic spices',
+      price: '$28',
+      image:
+        'https://images.unsplash.com/photo-1539136788836-5699e78bfc75?w=400&h=300&fit=crop&q=80',
+      category: 'Main Course',
+      prepTime: '25 min',
+    },
+    {
+      id: '2',
+      name: 'Couscous Berber',
+      description: 'Fluffy semolina with seasonal vegetables and your choice of protein',
+      price: '$24',
+      image: 'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop&q=80',
+      category: 'Traditional',
+      prepTime: '20 min',
+    },
+    {
+      id: '3',
+      name: 'Pastilla Royale',
+      description: 'Delicate pastry filled with spiced pigeon, almonds, and cinnamon',
+      price: '$32',
+      image:
+        'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop&q=80',
+      category: 'Specialty',
+      prepTime: '30 min',
+    },
+  ],
+  searchPlaceholder: 'Search menu items...',
 } as const;
 
 type NavigationProps = Partial<typeof DEFAULT_NAVIGATION>;
@@ -22,161 +58,191 @@ export default function Navigation(props: NavigationProps) {
   const config = { ...DEFAULT_NAVIGATION, ...props };
   const navigate = useSmartNavigation();
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleNavClick = (href: string) => {
-    navigate(href);
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleLinkClick = (href: string) => {
+    if (href === '#menu') {
+      setShowMenu(!showMenu);
+    } else {
+      navigate(href);
+      setShowMenu(false);
+    }
     setIsOpen(false);
   };
 
-  const handleReservationClick = () => {
-    navigate(config.reservationHref);
-  };
-
-  const handlePhoneClick = () => {
-    window.location.href = `tel:${config.phoneNumber}`;
-  };
+  const filteredMenuItems = config.menuItems.filter(
+    item =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <section
-      id="navigation"
-      className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50"
-    >
-      <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
-          {/* Brand */}
-          <div className="flex-shrink-0">
-            <div className="flex flex-col">
-              <span
-                data-editable="brandName"
-                className="text-xl lg:text-2xl font-bold text-primary"
+    <section id="navigation" className="relative">
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? 'bg-background/95 backdrop-blur-md border-b border-border shadow-sm'
+            : 'bg-transparent'
+        }`}
+      >
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 lg:h-20">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <button
+                onClick={() => handleLinkClick('#hero')}
+                className="text-xl lg:text-2xl font-bold text-foreground hover:text-primary transition-colors"
               >
-                {config.brandName}
-              </span>
-              <span
-                data-editable="brandTagline"
-                className="text-xs lg:text-sm text-muted-foreground hidden sm:block"
-              >
-                {config.brandTagline}
-              </span>
-            </div>
-          </div>
-
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex lg:items-center lg:space-x-8">
-            <div className="flex space-x-6">
-              {config.menuItems.map((item, idx) => (
-                <Button
-                  key={idx}
-                  variant="ghost"
-                  onClick={() => handleNavClick(item.href)}
-                  data-editable-href={`menuItems[${idx}].href`}
-                  data-href={item.href}
-                  className="text-foreground hover:text-primary hover:bg-accent/50 transition-colors"
-                >
-                  <span data-editable={`menuItems[${idx}].label`}>{item.label}</span>
-                </Button>
-              ))}
+                <span data-editable="logo">{config.logo}</span>
+              </button>
             </div>
 
-            {/* Desktop Actions */}
-            <div className="flex items-center space-x-4 ml-8 pl-8 border-l border-border">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePhoneClick}
-                className="hidden xl:flex border-primary/20 text-primary hover:bg-primary/10"
-              >
-                <span data-editable="phoneText">{config.phoneText}</span>
-              </Button>
-
-              <Button
-                onClick={handleReservationClick}
-                data-editable-href="reservationHref"
-                data-href={config.reservationHref}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
-              >
-                <span data-editable="reservationText">{config.reservationText}</span>
-              </Button>
+            {/* Desktop Navigation */}
+            <div className="hidden md:block">
+              <div className="ml-10 flex items-baseline space-x-8">
+                {config.links.map((link, index) => (
+                  <button
+                    key={link.name}
+                    onClick={() => handleLinkClick(link.href)}
+                    className="text-foreground hover:text-primary px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-accent/50 rounded-md"
+                    data-editable-href={`links[${index}].href`}
+                    data-href={link.href}
+                  >
+                    <span data-editable={`links[${index}].name`}>{link.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Mobile Menu Button */}
-          <div className="lg:hidden">
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-foreground hover:text-primary hover:bg-accent/50"
-                >
-                  <Menu className="h-6 w-6" />
-                  <span className="sr-only">Open menu</span>
-                </Button>
-              </SheetTrigger>
-
-              <SheetContent
-                side="right"
-                className="w-80 bg-card text-card-foreground border-border"
-              >
-                <div className="flex flex-col h-full">
-                  {/* Mobile Header */}
-                  <div className="flex items-center justify-between pb-6 border-b border-border">
-                    <div>
-                      <span data-editable="brandName" className="text-xl font-bold text-primary">
-                        {config.brandName}
-                      </span>
-                      <p
-                        data-editable="brandTagline"
-                        className="text-sm text-muted-foreground mt-1"
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-foreground">
+                    <Menu className="h-6 w-6" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                  <div className="flex flex-col space-y-4 mt-8">
+                    {config.links.map((link, index) => (
+                      <button
+                        key={link.name}
+                        onClick={() => handleLinkClick(link.href)}
+                        className="text-left text-foreground hover:text-primary px-4 py-3 text-lg font-medium transition-colors duration-200 hover:bg-accent/50 rounded-md"
+                        data-editable-href={`links[${index}].href`}
+                        data-href={link.href}
                       >
-                        {config.brandTagline}
-                      </p>
-                    </div>
+                        <span data-editable={`links[${index}].name`}>{link.name}</span>
+                      </button>
+                    ))}
                   </div>
-
-                  {/* Mobile Navigation */}
-                  <div className="flex-1 py-6">
-                    <div className="space-y-2">
-                      {config.menuItems.map((item, idx) => (
-                        <Button
-                          key={idx}
-                          variant="ghost"
-                          onClick={() => handleNavClick(item.href)}
-                          data-editable-href={`menuItems[${idx}].href`}
-                          data-href={item.href}
-                          className="w-full justify-start text-left h-12 text-base hover:bg-accent/50 hover:text-primary"
-                        >
-                          <span data-editable={`menuItems[${idx}].label`}>{item.label}</span>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Mobile Actions */}
-                  <div className="pt-6 border-t border-border space-y-3">
-                    <Button
-                      variant="outline"
-                      onClick={handlePhoneClick}
-                      className="w-full border-primary/20 text-primary hover:bg-primary/10"
-                    >
-                      <span data-editable="phoneText">{config.phoneText}</span>
-                    </Button>
-
-                    <Button
-                      onClick={handleReservationClick}
-                      data-editable-href="reservationHref"
-                      data-href={config.reservationHref}
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
-                    >
-                      <span data-editable="reservationText">{config.reservationText}</span>
-                    </Button>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </nav>
+
+      {/* Menu Dropdown */}
+      {showMenu && (
+        <div className="fixed top-16 lg:top-20 left-0 right-0 z-40 bg-background/98 backdrop-blur-md border-b border-border shadow-lg">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {/* Search Field */}
+            <div className="mb-6 max-w-md mx-auto">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder={config.searchPlaceholder}
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-background border-border"
+                  data-editable="searchPlaceholder"
+                />
+              </div>
+            </div>
+
+            {/* Menu Items Grid */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 max-h-96 overflow-y-auto">
+              {filteredMenuItems.map((item, index) => (
+                <Card
+                  key={item.id}
+                  className="bg-card border-border hover:shadow-md transition-shadow"
+                >
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      <div className="relative w-20 h-20 flex-shrink-0">
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover rounded-md"
+                          data-editable-src={`menuItems[${index}].image`}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-1">
+                          <h3 className="font-semibold text-sm text-foreground truncate">
+                            <span data-editable={`menuItems[${index}].name`}>{item.name}</span>
+                          </h3>
+                          <span className="text-primary font-bold text-sm ml-2">
+                            <span data-editable={`menuItems[${index}].price`}>{item.price}</span>
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                          <span data-editable={`menuItems[${index}].description`}>
+                            {item.description}
+                          </span>
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            <span data-editable={`menuItems[${index}].category`}>
+                              {item.category}
+                            </span>
+                          </Badge>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <span data-editable={`menuItems[${index}].prepTime`}>
+                              {item.prepTime}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {filteredMenuItems.length === 0 && searchQuery && (
+              <div className="text-center py-8 text-muted-foreground">
+                No menu items found matching "{searchQuery}"
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Overlay */}
+      {showMenu && (
+        <div
+          className="fixed inset-0 bg-background/20 backdrop-blur-sm z-30"
+          onClick={() => setShowMenu(false)}
+        />
+      )}
     </section>
   );
 }
